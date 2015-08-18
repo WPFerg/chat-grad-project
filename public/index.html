@@ -44,14 +44,16 @@
                         <span class="material-icons new-message" ng-show="chat.anyUnseen">chat bubble</span>
                         <a class="material-icons close-link" ng-click="hideTab($index)">close</a>
                     </md-tab-label>
-                    <md-tab-body>
+                    <md-tab-body class="chat-tab">
                         <md-progress-circular md-mode="indeterminate" ng-show="chat.isLoading"></md-progress-circular>
-                        <md-list>
-                            <md-list-item ng-repeat="message in chat.messages">
-                                <img src="{{message.from.avatarUrl}}" class="md-avatar" alt="{{message.from.name || message.from.id}}" />
-                                <b>{{message.from.name || message.from.id}}:</b> {{message.body}}
-                            </md-list-item>
-                        </md-list>
+                        <div ng-repeat="message in chat.messages" class="chat-message">
+                            <div ng-if="message.from.id !== user.id">
+                                <received-chat-item></received-chat-item>
+                            </div>
+                            <div ng-if="message.from.id === user.id">
+                                <sent-chat-item></sent-chat-item>
+                            </div>
+                        </div>
 
                         <form ng-submit="sendMessage(chat)" layout="row">
                             <md-input-container flex="90">

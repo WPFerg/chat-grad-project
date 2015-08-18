@@ -1,3 +1,6 @@
+@primary: rgb(233,30,99);
+@accent: rgb(68,138,255);
+
 md-tab {
   .md-accent {
     background-color: rgb(68,138,255);
@@ -19,5 +22,49 @@ md-tab-item {
       width: 1em;
       padding: 5px;
     }
+  }
+}
+
+.chat-avatar {
+  margin-top: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.chat-detail {
+  display: inline-block;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.chat-sent-time {
+  font-size: 0.7em;
+  opacity: 0.7;
+}
+
+received-chat-item {
+  text-align: left;
+
+  .chat-detail {
+    color: #ffffff;
+    background-color: @accent;
+  }
+}
+
+sent-chat-item {
+  width: 100%;
+  text-align: right;
+
+    .chat-detail {
+      color: #ffffff;
+      background-color: @primary;
+    }
+}
+
+received-chat-item, sent-chat-item {
+  .chat-detail {
+    margin-top: 10px;
   }
 }

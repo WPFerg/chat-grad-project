@@ -7,11 +7,25 @@
             .accentPalette("blue");
     });
 
+    app.directive("receivedChatItem", function() {
+        return {
+            restrict: "E",
+            templateUrl: "receivedChatItem.template.html"
+        };
+    });
+
+    app.directive("sentChatItem", function() {
+        return {
+            restrict: "E",
+            templateUrl: "sentChatItem.template.html"
+        };
+    });
+
     app.controller("ChatController", function($scope, $http, $interval, $timeout, $mdToast) {
         $scope.loggedIn = false;
         $scope.activeChats = [];
         $scope.selectedTab = 0;
-        $scope.visibleChatFilter = {hidden: '!true'};
+        $scope.visibleChatFilter = {hidden: "!true"};
 
         // Setup
         $http.get("/api/user").then(function (userResult) {

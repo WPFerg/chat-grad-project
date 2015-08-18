@@ -1,0 +1,48 @@
+md-tab .md-accent {
+  background-color: #448aff;
+}
+md-tab-item a.close-link {
+  font-size: 1em;
+}
+md-tab-item span.new-message {
+  font-size: 0.7em;
+  border-radius: 100%;
+  background-color: rgba(0, 0, 0, 0.3);
+  width: 1em;
+  padding: 5px;
+}
+.chat-avatar {
+  margin-top: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.chat-detail {
+  display: inline-block;
+  padding: 10px;
+  border-radius: 5px;
+}
+.chat-sent-time {
+  font-size: 0.7em;
+  opacity: 0.7;
+}
+received-chat-item {
+  text-align: left;
+}
+received-chat-item .chat-detail {
+  color: #ffffff;
+  background-color: #448aff;
+}
+sent-chat-item {
+  width: 100%;
+  text-align: right;
+}
+sent-chat-item .chat-detail {
+  color: #ffffff;
+  background-color: #e91e63;
+}
+received-chat-item .chat-detail,
+sent-chat-item .chat-detail {
+  margin-top: 10px;
+}
