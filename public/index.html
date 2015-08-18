@@ -38,21 +38,28 @@
                         </md-list-item>
                     </md-list>
                 </md-tab>
-                <md-tab ng-repeat="chat in activeChats" label="{{chat.user.name || chat.user.id}}">
-                    <md-progress-circular md-mode="indeterminate" ng-show="chat.isLoading"></md-progress-circular>
-                    <md-list>
-                        <md-list-item ng-repeat="message in chat.messages">
-                            <img src="{{message.from.avatarUrl}}" class="md-avatar" alt="{{message.from.name || message.from.id}}" />
-                            <b>{{message.from.name || message.from.id}}:</b> {{message.body}}
-                        </md-list-item>
-                    </md-list>
+                <md-tab ng-repeat="chat in activeChats | filter:visibleChatFilter">
+                    <md-tab-label>
+                        {{chat.user.name || chat.user.id}}
+                        <span class="material-icons new-message" ng-show="chat.anyUnseen">chat bubble</span>
+                        <a class="material-icons close-link" ng-click="hideTab($index)">close</a>
+                    </md-tab-label>
+                    <md-tab-body>
+                        <md-progress-circular md-mode="indeterminate" ng-show="chat.isLoading"></md-progress-circular>
+                        <md-list>
+                            <md-list-item ng-repeat="message in chat.messages">
+                                <img src="{{message.from.avatarUrl}}" class="md-avatar" alt="{{message.from.name || message.from.id}}" />
+                                <b>{{message.from.name || message.from.id}}:</b> {{message.body}}
+                            </md-list-item>
+                        </md-list>
 
-                    <form ng-submit="sendMessage(chat)">
-                        <md-input-container>
-                            <label>Message</label>
-                            <input ng-model="chat.currentlyTypedMessage" name="typedMessage" />
-                        </md-input-container>
-                    </form>
+                        <form ng-submit="sendMessage(chat)">
+                            <md-input-container>
+                                <label>Message</label>
+                                <input ng-model="chat.currentlyTypedMessage" name="typedMessage" />
+                            </md-input-container>
+                        </form>
+                    </md-tab-body>
                 </md-tab>
             </md-tabs>
         </md-content>

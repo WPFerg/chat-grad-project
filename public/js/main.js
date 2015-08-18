@@ -11,6 +11,7 @@
         $scope.loggedIn = false;
         $scope.activeChats = [];
         $scope.selectedTab = 0;
+        $scope.visibleChatFilter = {hidden: '!true'};
 
         // Setup
         $http.get("/api/user").then(function (userResult) {
@@ -43,18 +44,26 @@
                     });
 
                     if (matchingChats.length === 0) {
-                        $scope.activeChats.push({
+                        var newChat = {
                             user: $scope.$getUserById(conversation.user),
                             messages: [],
                             lastMessage: conversation.lastMessage,
                             anyUnseen: conversation.anyUnseen || false
-                        });
+                        };
+                        if (newChat.anyUnseen) {
+                            $scope.notifyUnreadChat(newChat);
+                        }
+                        $scope.activeChats.push(newChat);
                     } else {
                         var cachedChat = matchingChats[0];
 
                         if (cachedChat.lastMessage < conversation.lastMessage) {
                             cachedChat.lastMessage = conversation.lastMessage;
                             cachedChat.anyUnseen = conversation.anyUnseen;
+                            cachedChat.hidden = false;
+                            if (!$scope.$isActiveChat(cachedChat)) {
+                                $scope.notifyUnreadChat(cachedChat);
+                            }
                         }
                     }
                 });
@@ -115,6 +124,10 @@
             }
         };
 
+        $scope.hideTab = function (index) {
+            $scope.activeChats[index].hidden = true;
+        };
+
         $scope.chatHasUnreadMessages = function (user) {
             var chat = $scope.$getChatByUser(user);
 
@@ -145,6 +158,7 @@
                 var chat = $scope.activeChats[current - 1];
                 if (chat.messages.length === 0) {
                     chat.isLoading = true;
+                    chat.anyUnseen = false;
                     $scope.$pollActiveChat();
                 }
             }
@@ -164,7 +178,7 @@
 
                             if (messagesAtSameTime.length === 0) {
                                 chat.messages.push(message);
-                                if (message.from.id === $scope.user.id) {
+                                if (message.from.id !== $scope.user.id) {
                                     $scope.notify(message);
                                 }
                             }
@@ -223,6 +237,20 @@
                 .position("bottom right");
 
             $mdToast.show(toast);
+        };
+
+        $scope.$isActiveChat = function(chat) {
+            if ($scope.selectedTab !== 0) {
+                var activeChat = $scope.activeChats[$scope.selectedTab - 1];
+                return activeChat.user.id === chat.user.id;
+            }
+            return false;
+        };
+
+        $scope.notifyUnreadChat = function(chat) {
+            $scope.notify({from: chat.user,
+                body: "has sent you a message"
+            });
         };
 
         // Check for notification permission
