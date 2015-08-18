@@ -47,7 +47,7 @@
                             user: $scope.$getUserById(conversation.user),
                             messages: [],
                             lastMessage: conversation.lastMessage,
-                            anyUnseen: conversation.anyUnseen
+                            anyUnseen: conversation.anyUnseen || false
                         });
                     } else {
                         var cachedChat = matchingChats[0];
@@ -110,6 +110,25 @@
                     $scope.selectedTab = i + 1; // +1 because of the first chat tab
                     break;
                 }
+            }
+        };
+
+        $scope.chatHasUnreadMessages = function (user) {
+            var chat = $scope.$getChatByUser(user);
+
+            if (chat) {
+                return chat.anyUnseen;
+            }
+        };
+
+        $scope.$getChatByUser = function (user) {
+
+            var matchingChats = $scope.activeChats.filter(function (chat) {
+                return chat.user.id === user.id;
+            });
+
+            if (matchingChats.length !== 0) {
+                return matchingChats[0];
             }
         };
 

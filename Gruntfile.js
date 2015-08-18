@@ -1,5 +1,7 @@
 module.exports = function(grunt) {
     grunt.loadNpmTasks("grunt-contrib-jshint");
+    grunt.loadNpmTasks("grunt-contrib-less");
+    grunt.loadNpmTasks("grunt-contrib-watch");
     grunt.loadNpmTasks("grunt-jscs");
     grunt.loadNpmTasks("grunt-mocha-test");
     grunt.loadNpmTasks("grunt-mocha-istanbul");
@@ -48,6 +50,19 @@ module.exports = function(grunt) {
                 coverageFolder: artifactsLocation,
                 check: true
             }
+        },
+        less: {
+            development: {
+                files: {
+                    "public/style.css": "public/style.less"
+                }
+            }
+        },
+        watch: {
+            less: {
+                files: ["**/*.less"],
+                tasks: ["less:compile"]
+            }
         }
     });
 
@@ -70,6 +85,7 @@ module.exports = function(grunt) {
     });
 
     grunt.registerTask("check", ["jshint", "jscs"]);
+    grunt.registerTask("watch", ["less:development", "watch:less"]);
     grunt.registerTask("test", ["check", "mochaTest", "mocha_istanbul", "istanbul_report",
         "istanbul_check_coverage"]);
     grunt.registerTask("default", "test");

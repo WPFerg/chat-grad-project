@@ -312,7 +312,7 @@ describe("server", function() {
         });
 
         it("returns the most recent message sent", function(done) {
-            authenticateUser(testUser, testToken, function() {
+            authenticateUser(testGithubUser, testToken, function() {
 
                 allConversations.toArray.callsArgWith(0, null, [
                     {
@@ -332,29 +332,42 @@ describe("server", function() {
                         body: "Haha",
                         sent: 1231,
                         seen: true
+                    },
+                    {
+                        between: ["charlie", "bob"],
+                        body: "Haha",
+                        sent: 1237,
+                        seen: false
                     }
                 ]);
                 request({url: requestUrl, jar: cookieJar}, function(error, response, body) {
                     assert.equal(response.statusCode, 200);
                     var json = JSON.parse(body);
-                    assert.equal(json[0].lastMessage, 1235);
+                    assert.equal(json[0].lastMessage, 1237);
+                    assert.equal(json[0].anyUnseen, true);
                     done();
                 });
             });
         });
 
         it("correctly sets seen", function(done) {
-            authenticateUser(testUser, testToken, function() {
+            authenticateUser(testGithubUser, testToken, function() {
 
                 allConversations.toArray.callsArgWith(0, null, [
                     {
-                        between: ["bob", "charlie"],
+                        between: ["charlie", "bob"],
                         body: "Hah",
-                        sent: 1234,
+                        sent: 1233,
                         seen: true
                     },
                     {
                         between: ["bob", "charlie"],
+                        body: "Haha",
+                        sent: 1234,
+                        seen: true
+                    },
+                    {
+                        between: ["charlie", "bob"],
                         body: "Haha",
                         sent: 1235,
                         seen: true
@@ -364,6 +377,7 @@ describe("server", function() {
                     assert.equal(response.statusCode, 200);
                     var json = JSON.parse(body);
                     assert.equal(json[0].lastMessage, 1235);
+                    assert.equal(json[0].anyUnseen, false);
                     done();
                 });
             });

@@ -100,23 +100,39 @@ module.exports = function(port, db, githubAuthoriser) {
 
                 docs.forEach(function (message) {
 
+                    var messageFrom = message.between[0];
+                    var messageSentByThisUser = messageFrom === req.session.user;
+                    var chat;
+
                     var user = message.between.filter(function (user) {
                         return user !== req.session.user;
                     })[0];
 
                     if (usersDiscovered.indexOf(user) === -1) {
-                        usersDiscovered.push(user);
-                        chats.push({
+
+                        chat = {
                             user: user,
-                            lastMessage: message.sent,
-                            seen: message.seen ? true : false
-                        });
+                            lastMessage: message.sent
+                        };
+
+                        if (messageSentByThisUser) {
+                            chat.anyUnseen = false;
+                        } else {
+                            chat.anyUnseen = message.seen ? false : true;
+                        }
+
+                        usersDiscovered.push(user);
+                        chats.push(chat);
                     } else {
-                        var chat = chats[usersDiscovered.indexOf(user)];
+                        chat = chats[usersDiscovered.indexOf(user)];
 
                         if (chat.lastMessage < message.sent) {
                             chat.lastMessage = message.sent;
-                            chat.seen = message.seen ? true : false;
+                            if (messageSentByThisUser) {
+                                chat.anyUnseen = false;
+                            } else {
+                                chat.anyUnseen = message.seen ? false : true;
+                            }
                         }
                     }
                 });
