@@ -53,10 +53,15 @@
                             </md-list-item>
                         </md-list>
 
-                        <form ng-submit="sendMessage(chat)">
-                            <md-input-container>
+                        <form ng-submit="sendMessage(chat)" layout="row">
+                            <md-input-container flex="90">
                                 <label>Message</label>
                                 <input ng-model="chat.currentlyTypedMessage" name="typedMessage" />
+                            </md-input-container>
+                            <md-input-container flex="10">
+                                <md-button class="md-raised md-primary md-icon-button material-icons">
+                                    send
+                                </md-button>
                             </md-input-container>
                         </form>
                     </md-tab-body>
