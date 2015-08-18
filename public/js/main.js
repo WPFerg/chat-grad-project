@@ -58,6 +58,7 @@
                         }
                     }
                 });
+                $scope.$reorderTabs();
             });
         };
 
@@ -79,6 +80,7 @@
             message.from = $scope.user;
             chat.currentlyTypedMessage = "";
             chat.messages.push(message);
+            chat.lastMessage = message.sent;
         };
 
         $scope.addChat = function(user) {
@@ -162,7 +164,9 @@
 
                             if (messagesAtSameTime.length === 0) {
                                 chat.messages.push(message);
-                                $scope.notify(message);
+                                if (message.from.id === $scope.user.id) {
+                                    $scope.notify(message);
+                                }
                             }
                         });
                     }
@@ -225,5 +229,20 @@
         if (Notification && Notification.permission !== "default") {
             $scope.desktopNotifications = Notification.permission;
         }
+
+        $scope.$reorderTabs = function () {
+            $scope.activeChats.sort(function(left, right) {
+                if (!left.lastMessage) {
+                    return 0;
+                }
+                if (!right.lastMessage) {
+                    return 0;
+                }
+                var leftTime = left.lastMessage;
+                var rightTime = right.lastMessage;
+
+                return (leftTime > rightTime) ? -1 : (leftTime === rightTime) ? 0 : 1;
+            });
+        };
     });
 })();
