@@ -7,7 +7,7 @@
             .accentPalette("blue");
     });
 
-    app.controller("ChatController", function($scope, $http, $interval) {
+    app.controller("ChatController", function($scope, $http, $interval, $timeout, $mdToast) {
         $scope.loggedIn = false;
         $scope.activeChats = [];
         $scope.selectedTab = 0;
@@ -162,10 +162,12 @@
 
                             if (messagesAtSameTime.length === 0) {
                                 chat.messages.push(message);
+                                $scope.notify(message);
                             }
                         });
                     }
                     chat.isLoading = false;
+                    chat.anyUnseen = false;
                 });
             }
         };
@@ -174,5 +176,54 @@
             $scope.$pollActiveChat();
             $scope.getConversations();
         };
+
+        $scope.setUpNotifications = function() {
+            if ($scope.desktopNotifications === "default" || !$scope.desktopNotifications) {
+                $scope.$requestNotificationPermission();
+            }
+        };
+
+        $scope.$requestNotificationPermission = function() {
+            if ("Notification" in window) {
+                Notification.requestPermission(function (result) {
+                    if (result !== "default") {
+                        $scope.desktopNotifications = result;
+                    }
+                });
+            } else {
+                $scope.desktopNotifications = "denied";
+            }
+        };
+
+        $scope.notify = function(message) {
+            if ($scope.desktopNotifications === "granted") {
+                $scope.$desktopNotification(message);
+            } else {
+                $scope.$showToast(message);
+            }
+        };
+
+        $scope.$desktopNotification = function(message) {
+            var notif = new Notification(message.from.name || message.from.id, {
+                icon: message.from.avatarUrl,
+                body: message.body
+            });
+
+            $timeout(function() { notif.close(); }, 3000);
+        };
+
+        $scope.$showToast = function(message) {
+            var toast = $mdToast.simple()
+                .content((message.from.name || message.from.id) + ": " + message.body)
+                .highlightAction(false)
+                .position("bottom right");
+
+            $mdToast.show(toast);
+        };
+
+        // Check for notification permission
+        if (Notification && Notification.permission !== "default") {
+            $scope.desktopNotifications = Notification.permission;
+        }
     });
 })();

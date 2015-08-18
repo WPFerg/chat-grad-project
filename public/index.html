@@ -25,6 +25,9 @@
         <md-content ng-show="loggedIn">
             <md-tabs class="md-primary" md-selected="selectedTab" md-dynamic-height>
                 <md-tab label="Chat">
+                    <md-button class="md-raised md-accent" ng-hide="desktopNotifications" ng-click="setUpNotifications()">
+                        Enable Desktop Notifications
+                    </md-button>
                     <md-list>
                         <md-subheader class="md-accent">Users</md-subheader>
                         <md-list-item ng-repeat="user in users" ng-click="addChat(user)">
