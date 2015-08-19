@@ -103,6 +103,7 @@ module.exports = function(port, db, githubAuthoriser) {
                     var messageFrom = message.between[0];
                     var messageSentByThisUser = messageFrom === req.session.user;
                     var chat;
+                    var indexOfThisUserInMessage;
 
                     var user = message.between.filter(function (user) {
                         return user !== req.session.user;
@@ -118,7 +119,8 @@ module.exports = function(port, db, githubAuthoriser) {
                         if (messageSentByThisUser) {
                             chat.anyUnseen = false;
                         } else {
-                            chat.anyUnseen = message.seen ? false : true;
+                            indexOfThisUserInMessage = message.between.indexOf(req.session.user);
+                            chat.anyUnseen = message.seen[indexOfThisUserInMessage - 1] ? false : true;
                         }
 
                         usersDiscovered.push(user);
@@ -131,7 +133,8 @@ module.exports = function(port, db, githubAuthoriser) {
                             if (messageSentByThisUser) {
                                 chat.anyUnseen = false;
                             } else {
-                                chat.anyUnseen = message.seen ? false : true;
+                                indexOfThisUserInMessage = message.between.indexOf(req.session.user);
+                                chat.anyUnseen = message.seen[indexOfThisUserInMessage - 1] ? false : true;
                             }
                         }
                     }
@@ -150,7 +153,7 @@ module.exports = function(port, db, githubAuthoriser) {
         var message = {
             sent: req.body.sent,
             body: req.body.body,
-            seen: false
+            seen: [false]
         };
         if (toUserId && fromUserId && message.sent && message.body) {
             message.between = [fromUserId, toUserId];
@@ -182,20 +185,33 @@ module.exports = function(port, db, githubAuthoriser) {
                 res.json(docs.map(function (message) {
                     return {
                         from: message.between[0],
+                        between: message.between,
                         sent: message.sent,
                         body: message.body,
-                        seen: message.seen || false
+                        seen: message.seen
                     };
                 }));
 
                 // Mark as seen
-                conversations.update({
-                    between: [toUserId, fromUserId]
-                }, {
-                    $set: {
-                        seen: true
+                docs.forEach(function (message) {
+
+                    var indexOfUserInBetween = message.between.indexOf(req.session.user);
+
+                    if (indexOfUserInBetween > 0) {
+
+                        if (!message.seen[indexOfUserInBetween - 1]) {
+                            message.seen[indexOfUserInBetween - 1] = true;
+                            conversations.update({
+                                between: message.between,
+                                sent: message.sent
+                            }, {
+                                $set: {
+                                    seen: message.seen
+                                }
+                            });
+                        }
                     }
-                }, {multi: true});
+                });
             }
         });
     });

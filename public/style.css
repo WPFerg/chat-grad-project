@@ -37,6 +37,9 @@ md-tab-item span.new-message {
   font-size: 0.7em;
   opacity: 0.7;
 }
+.chat-sent-time .material-icons {
+  font-size: 1em;
+}
 received-chat-item {
   text-align: left;
 }

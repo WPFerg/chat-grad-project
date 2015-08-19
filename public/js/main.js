@@ -215,6 +215,14 @@
                         data.forEach(function(message) {
                             message.from = $scope.$getUserById(message.from);
 
+                            if (typeof message.seen === "boolean") {
+                                message.seen = [message.seen];
+                            }
+
+                            if (message.from.id !== $scope.user.id) {
+                                message.userIndex = message.between.indexOf($scope.user.id);
+                            }
+
                             var messagesAtSameTime = chat.messages.filter(function (otherMessage) {
                                 return otherMessage.sent === message.sent;
                             });
@@ -223,7 +231,13 @@
                                 chat.messages.push(message);
                                 if (message.from.id !== $scope.user.id && !message.seen) {
                                     $scope.notify(message);
+                                    message.seen = [true];
                                 }
+                            } else {
+                                // Update seen ticks
+                                messagesAtSameTime.forEach(function (otherMessage) {
+                                    otherMessage.seen = message.seen;
+                                });
                             }
                         });
                     }

@@ -319,25 +319,25 @@ describe("server", function() {
                         between: ["bob", "charlie"],
                         body: "Hah",
                         sent: 1234,
-                        seen: false
+                        seen: [false]
                     },
                     {
                         between: ["bob", "charlie"],
                         body: "Haha",
                         sent: 1235,
-                        seen: false
+                        seen: [false]
                     },
                     {
                         between: ["bob", "charlie"],
                         body: "Haha",
                         sent: 1231,
-                        seen: true
+                        seen: [true]
                     },
                     {
                         between: ["charlie", "bob"],
                         body: "Haha",
                         sent: 1237,
-                        seen: false
+                        seen: [false]
                     }
                 ]);
                 request({url: requestUrl, jar: cookieJar}, function(error, response, body) {
@@ -358,19 +358,19 @@ describe("server", function() {
                         between: ["charlie", "bob"],
                         body: "Hah",
                         sent: 1233,
-                        seen: true
+                        seen: [true]
                     },
                     {
                         between: ["bob", "charlie"],
                         body: "Haha",
                         sent: 1234,
-                        seen: true
+                        seen: [true]
                     },
                     {
                         between: ["charlie", "bob"],
                         body: "Haha",
                         sent: 1235,
-                        seen: true
+                        seen: [true]
                     }
                 ]);
                 request({url: requestUrl, jar: cookieJar}, function(error, response, body) {
@@ -423,10 +423,22 @@ describe("server", function() {
             authenticateUser(testGithubUser, testToken, function() {
                 allConversations.toArray.callsArgWith(0, null, [
                     {
-                        between: ["abc", "def"],
+                        between: ["bob", "charlie"],
                         sent: 2384907238947,
                         body: "hello",
-                        seen: false
+                        seen: [false]
+                    },
+                    {
+                        between: ["charlie", "bob"],
+                        sent: 2384907238949,
+                        body: "hello",
+                        seen: [false]
+                    },
+                    {
+                        between: ["charlie", "bob"],
+                        sent: 2384907238949,
+                        body: "hello",
+                        seen: [true]
                     }
                 ]);
                 request({url: requestUrl + "/charlie", jar: cookieJar}, function(error, response) {
