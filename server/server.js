@@ -105,10 +105,15 @@ module.exports = function(port, db, githubAuthoriser) {
                     var messageSentByThisUser = messageFrom === req.session.user;
                     var chat;
                     var indexOfThisUserInMessage;
+                    var user;
 
-                    var user = message.between.filter(function (user) {
-                        return user !== req.session.user;
-                    })[0];
+                    if (message.gId) {
+                        user = message.gId;
+                    } else {
+                        user = message.between.filter(function (user) {
+                            return user !== req.session.user;
+                        })[0];
+                    }
 
                     if (usersDiscovered.indexOf(user) === -1) {
 
@@ -153,20 +158,46 @@ module.exports = function(port, db, githubAuthoriser) {
         var fromUserId = req.session.user;
         var message = {
             sent: req.body.sent,
-            body: req.body.body,
-            seen: [false]
+            body: req.body.body
         };
-        if (toUserId && fromUserId && message.sent && message.body) {
-            message.between = [fromUserId, toUserId];
-            conversations.insert(message, {}, function(err, docs) {
-                if (err) {
-                    res.sendStatus(500);
-                } else {
-                    res.sendStatus(200);
-                }
-            });
-        } else {
-            res.sendStatus(401);
+
+
+        groups.findOne({_id: toUserId}, function(err, doc) {
+            if (!err && doc && doc.users) {
+                var usersExcludingCurrentUser = doc.users.filter(function (user) {
+                    return user !== fromUserId;
+                });
+                message.between = [fromUserId].concat(usersExcludingCurrentUser);
+                message.gId = doc._id;
+                send();
+            } else {
+                message.between = [fromUserId, toUserId];
+                send();
+            }
+        });
+
+        function send() {
+            populateSeen(message.between.length - 1);
+
+            if (toUserId && fromUserId && message.sent && message.body) {
+                conversations.insert(message, {}, function (err, docs) {
+                    if (err) {
+                        res.sendStatus(500);
+                    } else {
+                        res.sendStatus(200);
+                    }
+                });
+            } else {
+                res.sendStatus(401);
+            }
+        }
+
+        function populateSeen(numberOfParticipants) {
+            message.seen = [];
+
+            for (var i = 0; i < numberOfParticipants; i++) {
+                message.seen.push(false);
+            }
         }
     });
 
