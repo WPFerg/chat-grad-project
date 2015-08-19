@@ -107,19 +107,22 @@ module.exports = function(port, db, githubAuthoriser) {
                     var indexOfThisUserInMessage;
                     var user;
 
-                    if (message.gId) {
-                        user = message.gId;
+                    if (message.groupId) {
+                        user = message.groupId;
+                        message.isGroup = true;
                     } else {
                         user = message.between.filter(function (user) {
                             return user !== req.session.user;
                         })[0];
+                        message.isGroup = false;
                     }
 
                     if (usersDiscovered.indexOf(user) === -1) {
 
                         chat = {
                             user: user,
-                            lastMessage: message.sent
+                            lastMessage: message.sent,
+                            isGroup: message.isGroup
                         };
 
                         if (messageSentByThisUser) {
@@ -161,18 +164,19 @@ module.exports = function(port, db, githubAuthoriser) {
             body: req.body.body
         };
 
-
         groups.findOne({_id: toUserId}, function(err, doc) {
             if (!err && doc && doc.users) {
                 var usersExcludingCurrentUser = doc.users.filter(function (user) {
                     return user !== fromUserId;
                 });
                 message.between = [fromUserId].concat(usersExcludingCurrentUser);
-                message.gId = doc._id;
+                message.groupId = doc._id;
                 send();
-            } else {
+            } else if (!err) {
                 message.between = [fromUserId, toUserId];
                 send();
+            } else {
+                res.send(500);
             }
         });
 
@@ -215,7 +219,8 @@ module.exports = function(port, db, githubAuthoriser) {
 
         function findByBetween(between, groupId) {
             conversations.find({
-                between: {
+                between:
+                {
                     $all: between
                 },
                 groupId: groupId

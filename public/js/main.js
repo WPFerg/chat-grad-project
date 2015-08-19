@@ -100,6 +100,7 @@
                             lastMessage: conversation.lastMessage,
                             anyUnseen: conversation.anyUnseen || false
                         };
+
                         if (newChat.anyUnseen) {
                             $scope.notifyUnreadChat(newChat);
                         }
@@ -145,7 +146,7 @@
         $scope.addChat = function(user) {
 
             var matchingChats = $scope.activeChats.filter(function (otherChat) {
-                return otherChat.user === user;
+                return otherChat.user.id === user.id;
             });
             var chatToSearchFor;
 
@@ -186,8 +187,6 @@
             if (gId) {
                 $http.put("/api/groups/" + gId, groupObj).then(function (success) {
                     $scope.showAddGroup = false;
-                }, function (err) {
-                    console.log(err);
                 });
             }
         };
@@ -232,7 +231,8 @@
         };
 
         $scope.$getUserById = function (userId) {
-            return $scope.allUsers.filter(function (user) {
+            var userGroupHybrid = $scope.allUsers.concat($scope.groups);
+            return userGroupHybrid.filter(function (user) {
                 return user.id === userId;
             })[0];
         };
@@ -397,12 +397,12 @@
         $scope.findUserMatches = function(users, searchText) {
             return users.filter(function (user) {
                 return user.id.indexOf(searchText) !== -1 || (user.name && user.name.indexOf(searchText) !== -1);
-            })
+            });
         };
 
         $scope.autocompleteSelectedItemChange = function (selectedUser, arrayToPush, clearCallback) {
             if (typeof arrayToPush === "undefined") {
-                arrayToPush = []
+                arrayToPush = [];
             }
 
             if (selectedUser) {
@@ -415,7 +415,7 @@
 
         $scope.clearAddGroupEnteredText = function() {
             $scope.addGroupEnteredText = "";
-        }
+        };
     });
 }
 )();

@@ -35,7 +35,7 @@
 
                     <md-list ng-show="groups">
                         <md-subheader class="md-accent">Groups</md-subheader>
-                        <md-list-item ng-repeat="group in groups" ng-click="">
+                        <md-list-item ng-repeat="group in groups" ng-click="addChat(group)">
                             <p>
                                 <b ng-bind="group.id"></b>: {{group.title}}
                             </p>
