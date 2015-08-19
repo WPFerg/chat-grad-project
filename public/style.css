@@ -1,3 +1,9 @@
+add-group h2.md-accent {
+  color: #448aff;
+}
+add-group h2.md-primary {
+  color: #e91e63;
+}
 md-tab .md-accent {
   background-color: #448aff;
 }

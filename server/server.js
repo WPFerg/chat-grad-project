@@ -9,7 +9,8 @@ module.exports = function(port, db, githubAuthoriser) {
     app.use(cookieParser());
 
     var users = db.collection("users");
-    var conversations = db.collection("conversations-wpferg");
+    var conversations = db.collection("conversations-wpferg2");
+    var groups = db.collection("groups-wpferg");
     var sessions = {};
 
     app.use(bodyParser.json());
@@ -173,33 +174,41 @@ module.exports = function(port, db, githubAuthoriser) {
         var toUserId = req.params.userId;
         var fromUserId = req.session.user;
 
-        conversations.find({
-            between: {
-                $all: [toUserId, fromUserId]
-            }
-        }).toArray(function (err, docs) {
-            if (err) {
-                res.sendStatus(500);
+        groups.findOne({_id: toUserId}, function(err, doc) {
+            if (!err && doc && doc.users) {
+                findByBetween(doc.users, toUserId);
             } else {
-                docs = docs.sort({sent: -1});
-                res.json(docs.map(function (message) {
-                    return {
-                        from: message.between[0],
-                        between: message.between,
-                        sent: message.sent,
-                        body: message.body,
-                        seen: message.seen
-                    };
-                }));
+                findByBetween([toUserId, fromUserId], null);
+            }
+        });
 
-                // Mark as seen
-                docs.forEach(function (message) {
+        function findByBetween(between, groupId) {
+            conversations.find({
+                between: {
+                    $all: between
+                },
+                groupId: groupId
+            }).toArray(function (err, docs) {
+                if (err) {
+                    res.sendStatus(500);
+                } else {
+                    docs = docs.sort({sent: -1});
+                    res.json(docs.map(function (message) {
+                        return {
+                            from: message.between[0],
+                            between: message.between,
+                            sent: message.sent,
+                            body: message.body,
+                            seen: message.seen
+                        };
+                    }));
 
-                    var indexOfUserInBetween = message.between.indexOf(req.session.user);
+                    // Mark as seen
+                    docs.forEach(function (message) {
 
-                    if (indexOfUserInBetween > 0) {
+                        var indexOfUserInBetween = message.between.indexOf(req.session.user);
 
-                        if (!message.seen[indexOfUserInBetween - 1]) {
+                        if (indexOfUserInBetween > 0 && !message.seen[indexOfUserInBetween - 1]) {
                             message.seen[indexOfUserInBetween - 1] = true;
                             conversations.update({
                                 between: message.between,
@@ -210,8 +219,46 @@ module.exports = function(port, db, githubAuthoriser) {
                                 }
                             });
                         }
-                    }
-                });
+                    });
+                }
+            });
+        }
+    });
+
+    app.put("/api/groups/:groupId", function (req, res) {
+        var groupObject = {
+            _id: req.params.groupId,
+            title: req.body.title,
+            users: req.body.users
+        };
+
+        if (groupObject._id && groupObject.title && groupObject.users.length > 1) {
+            groups.save(groupObject, function (err, result) {
+
+                if (result.result.nModified) {
+                    res.sendStatus(200);
+                } else {
+                    res.sendStatus(201);
+                }
+            });
+        } else {
+            res.sendStatus(400);
+        }
+    });
+
+    app.get("/api/groups", function(req, res) {
+        groups.find({
+            users: req.session.user
+        }).toArray(function (err, docs) {
+            if (err) {
+                res.sendStatus(500);
+            } else {
+                res.json(docs.map(function (group) {
+                    return {
+                        id: group._id,
+                        title: group.title
+                    };
+                }));
             }
         });
     });

@@ -21,6 +21,13 @@
         };
     });
 
+    app.directive("addGroup", function() {
+        return {
+            restrict: "E",
+            templateUrl: "addGroup.template.html"
+        };
+    });
+
     app.directive("mdTabContent", function() {
         return {
             restrict: "E",
@@ -45,11 +52,12 @@
         };
     });
 
-    app.controller("ChatController", function($scope, $http, $interval, $timeout, $mdToast) {
+    app.controller("ChatController", function($scope, $http, $interval, $timeout, $mdToast, $mdDialog) {
         $scope.loggedIn = false;
         $scope.activeChats = [];
         $scope.selectedTab = 0;
         $scope.visibleChatFilter = {hidden: "!true"};
+        $scope.addGroupSelectedUsers = [];
 
         // Setup
         $http.get("/api/user").then(function (userResult) {
@@ -65,6 +73,10 @@
 
                 $interval($scope.$pollServer, 1000);
                 $scope.getConversations();
+            });
+
+            $http.get("/api/groups").then(function (result) {
+                $scope.groups = result.data;
             });
         }, function () {
             $http.get("/api/oauth/uri").then(function (result) {
@@ -149,6 +161,35 @@
             }
 
             $scope.$changeTabToChat(chatToSearchFor);
+        };
+
+        $scope.showAddGroupDialog = function() {
+            $scope.showAddGroup = true;
+        };
+
+        $scope.addGroupCancel = function() {
+            $scope.showAddGroup = false;
+            $scope.addGroupSelectedUsers = [];
+            $scope.addGroupId = "";
+            $scope.addGroupName = "";
+        };
+
+        $scope.addGroupCreate = function() {
+            $scope.addGroupSelectedUsers.push($scope.user);
+            var groupObj = {
+                title: $scope.addGroupName,
+                users: $scope.addGroupSelectedUsers.map(function (user) {
+                    return user.id;
+                })
+            };
+            var gId = $scope.addGroupId;
+            if (gId) {
+                $http.put("/api/groups/" + gId, groupObj).then(function (success) {
+                    $scope.showAddGroup = false;
+                }, function (err) {
+                    console.log(err);
+                });
+            }
         };
 
         $scope.$changeTabToChat = function (chatToSearchFor) {
@@ -352,5 +393,29 @@
                 }
             }
         };
+
+        $scope.findUserMatches = function(users, searchText) {
+            return users.filter(function (user) {
+                return user.id.indexOf(searchText) !== -1 || (user.name && user.name.indexOf(searchText) !== -1);
+            })
+        };
+
+        $scope.autocompleteSelectedItemChange = function (selectedUser, arrayToPush, clearCallback) {
+            if (typeof arrayToPush === "undefined") {
+                arrayToPush = []
+            }
+
+            if (selectedUser) {
+                arrayToPush.push(selectedUser);
+                if (clearCallback) {
+                    clearCallback();
+                }
+            }
+        };
+
+        $scope.clearAddGroupEnteredText = function() {
+            $scope.addGroupEnteredText = "";
+        }
     });
-})();
+}
+)();

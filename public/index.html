@@ -28,6 +28,22 @@
                     <md-button class="md-raised md-accent" ng-hide="desktopNotifications" ng-click="setUpNotifications()">
                         Enable Desktop Notifications
                     </md-button>
+                    <md-button class="md-fab md-primary add-group-button" aria-label="Add Group" ng-click="showAddGroupDialog()">
+                        <md-icon class="material-icons">people</md-icon>
+                    </md-button>
+                    <add-group ng-show="showAddGroup"></add-group>
+
+                    <md-list ng-show="groups">
+                        <md-subheader class="md-accent">Groups</md-subheader>
+                        <md-list-item ng-repeat="group in groups" ng-click="">
+                            <p>
+                                <b ng-bind="group.id"></b>: {{group.title}}
+                            </p>
+                            <md-icon class="material-icons"">message</md-icon>
+                            <md-divider></md-divider>
+                        </md-list-item>
+                    </md-list>
+
                     <md-list>
                         <md-subheader class="md-accent">Users</md-subheader>
                         <md-list-item ng-repeat="user in users" ng-click="addChat(user)">
@@ -37,6 +53,7 @@
                             <md-divider></md-divider>
                         </md-list-item>
                     </md-list>
+
                 </md-tab>
                 <md-tab ng-repeat="chat in activeChats | filter:visibleChatFilter">
                     <md-tab-label>

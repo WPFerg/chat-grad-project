@@ -1,6 +1,18 @@
 @primary: rgb(233,30,99);
 @accent: rgb(68,138,255);
 
+add-group {
+  h2 {
+    &.md-accent {
+      color: @accent;
+    }
+
+    &.md-primary {
+      color: @primary;
+    }
+  }
+}
+
 md-tab {
   .md-accent {
     background-color: rgb(68,138,255);
