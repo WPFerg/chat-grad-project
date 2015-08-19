@@ -192,8 +192,10 @@ module.exports = function(port, db, githubAuthoriser) {
                 conversations.update({
                     between: [toUserId, fromUserId]
                 }, {
-                    seen: true
-                });
+                    $set: {
+                        seen: true
+                    }
+                }, {multi: true});
             }
         });
     });

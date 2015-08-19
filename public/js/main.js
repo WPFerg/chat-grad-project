@@ -21,6 +21,30 @@
         };
     });
 
+    app.directive("mdTabContent", function() {
+        return {
+            restrict: "E",
+            link: function(scope, element, attrs) {
+                scope.isAtBottom = true;
+                element = element[0];
+
+                element.onscroll = function () {
+                    var browserHeight = window.innerHeight;
+                    var bodyHeight = element.scrollHeight;
+                    var scrolled = element.scrollTop;
+
+                    scope.isAtBottom = (Math.abs(scrolled / (bodyHeight - browserHeight))) > 0.95;
+                };
+
+                element.addEventListener("DOMNodeInserted", function() {
+                    if (scope.isAtBottom) {
+                        element.scrollTop = element.scrollHeight;
+                    }
+                });
+            }
+        };
+    });
+
     app.controller("ChatController", function($scope, $http, $interval, $timeout, $mdToast) {
         $scope.loggedIn = false;
         $scope.activeChats = [];
@@ -73,7 +97,7 @@
 
                         if (cachedChat.lastMessage < conversation.lastMessage) {
                             cachedChat.lastMessage = conversation.lastMessage;
-                            cachedChat.anyUnseen = conversation.anyUnseen;
+                            cachedChat.anyUnseen = true;
                             cachedChat.hidden = false;
                             if (!$scope.$isActiveChat(cachedChat)) {
                                 $scope.notifyUnreadChat(cachedChat);
@@ -132,6 +156,7 @@
             for (var i = 0; i < numberOfChats; i++) {
                 var chat = $scope.activeChats[i];
                 if (angular.equals(chat.user, chatToSearchFor.user)) {
+                    chat.hidden = false;
                     $scope.selectedTab = i + 1; // +1 because of the first chat tab
                     break;
                 }
@@ -140,6 +165,10 @@
 
         $scope.hideTab = function (index) {
             $scope.activeChats[index].hidden = true;
+
+            if (index < $scope.selectedTab) {
+                $scope.selectedTab--;
+            }
         };
 
         $scope.chatHasUnreadMessages = function (user) {
@@ -192,7 +221,7 @@
 
                             if (messagesAtSameTime.length === 0) {
                                 chat.messages.push(message);
-                                if (message.from.id !== $scope.user.id) {
+                                if (message.from.id !== $scope.user.id && !message.seen) {
                                     $scope.notify(message);
                                 }
                             }
@@ -273,6 +302,13 @@
         }
 
         $scope.$reorderTabs = function () {
+
+            var chat;
+
+            if ($scope.selectedTab !== 0) {
+                chat = $scope.activeChats[$scope.selectedTab];
+            }
+
             $scope.activeChats.sort(function(left, right) {
                 if (!left.lastMessage) {
                     return 0;
@@ -285,6 +321,22 @@
 
                 return (leftTime > rightTime) ? -1 : (leftTime === rightTime) ? 0 : 1;
             });
+
+            if (chat) {
+                $scope.selectedTab = $scope.$getIndexOfChat(chat);
+            }
+        };
+
+        $scope.$getIndexOfChat = function(chat) {
+            var noOfChats = $scope.activeChats.length;
+
+            for (var i = 0; i < noOfChats; i++) {
+                var otherChat = $scope.activeChats[i];
+
+                if (otherChat.user.id === chat.user.id) {
+                    return i;
+                }
+            }
         };
     });
 })();

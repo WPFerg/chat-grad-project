@@ -7,6 +7,22 @@ md-tab {
   }
 }
 
+md-content {
+  height: 100%;
+  max-height: calc(~"100% - 64px");
+  &.content-tabs {
+
+    md-tabs {
+      height: 100%;
+      md-tabs-content-wrapper {
+        md-tab-content {
+          height: 100%;
+        }
+      }
+    }
+  }
+}
+
 md-tab-item {
   a {
     &.close-link {

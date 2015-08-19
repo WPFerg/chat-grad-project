@@ -2,7 +2,7 @@
     <div flex></div>
     <div class="chat-detail" flex-order="8">
         <div><b>{{message.from.name || message.from.id}}:</b> {{message.body}}</div>
-        <div class="chat-sent-time">{{message.sent | date: 'h:mm a d MMM'}}</div>
+        <div class="chat-sent-time">{{message.sent | date: 'h:mm a d MMM'}} {{message.seen ? "Seen" : ""}}</div>
     </div>
 
     <img flex-order="9" src="{{message.from.avatarUrl}}" class="chat-avatar" alt="{{message.from.name || message.from.id}}"/>

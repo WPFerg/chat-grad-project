@@ -1,6 +1,16 @@
 md-tab .md-accent {
   background-color: #448aff;
 }
+md-content {
+  height: 100%;
+  max-height: calc(100% - 64px);
+}
+md-content.content-tabs md-tabs {
+  height: 100%;
+}
+md-content.content-tabs md-tabs md-tabs-content-wrapper md-tab-content {
+  height: 100%;
+}
 md-tab-item a.close-link {
   font-size: 1em;
 }

@@ -22,8 +22,8 @@
             </div>
         </md-toolbar>
         <md-button ng-hide="loggedIn" class="md-raised md-primary" href="{{loginUri}}">Log in</md-button>
-        <md-content ng-show="loggedIn">
-            <md-tabs class="md-primary" md-selected="selectedTab" md-dynamic-height>
+        <md-content ng-show="loggedIn" class="content-tabs">
+            <md-tabs class="md-primary" md-selected="selectedTab">
                 <md-tab label="Chat">
                     <md-button class="md-raised md-accent" ng-hide="desktopNotifications" ng-click="setUpNotifications()">
                         Enable Desktop Notifications
@@ -44,28 +44,30 @@
                         <span class="material-icons new-message" ng-show="chat.anyUnseen">chat bubble</span>
                         <a class="material-icons close-link" ng-click="hideTab($index)">close</a>
                     </md-tab-label>
-                    <md-tab-body class="chat-tab">
-                        <md-progress-circular md-mode="indeterminate" ng-show="chat.isLoading"></md-progress-circular>
-                        <div ng-repeat="message in chat.messages" class="chat-message">
-                            <div ng-if="message.from.id !== user.id">
-                                <received-chat-item></received-chat-item>
+                    <md-tab-body class="chat-tab" md-scroll-y>
+                        <div pin-at-bottom>
+                            <md-progress-circular md-mode="indeterminate" ng-show="chat.isLoading"></md-progress-circular>
+                            <div ng-repeat="message in chat.messages" class="chat-message">
+                                <div ng-if="message.from.id !== user.id">
+                                    <received-chat-item></received-chat-item>
+                                </div>
+                                <div ng-if="message.from.id === user.id">
+                                    <sent-chat-item></sent-chat-item>
+                                </div>
                             </div>
-                            <div ng-if="message.from.id === user.id">
-                                <sent-chat-item></sent-chat-item>
-                            </div>
-                        </div>
 
-                        <form ng-submit="sendMessage(chat)" layout="row">
-                            <md-input-container flex="90">
-                                <label>Message</label>
-                                <input ng-model="chat.currentlyTypedMessage" name="typedMessage" />
-                            </md-input-container>
-                            <md-input-container flex="10">
-                                <md-button class="md-raised md-primary md-icon-button material-icons">
-                                    send
-                                </md-button>
-                            </md-input-container>
-                        </form>
+                            <form ng-submit="sendMessage(chat)" layout="row">
+                                <md-input-container flex="90">
+                                    <label>Message</label>
+                                    <input ng-model="chat.currentlyTypedMessage" name="typedMessage" />
+                                </md-input-container>
+                                <md-input-container flex="10">
+                                    <md-button class="md-raised md-primary md-icon-button material-icons">
+                                        send
+                                    </md-button>
+                                </md-input-container>
+                            </form>
+                        </div>
                     </md-tab-body>
                 </md-tab>
             </md-tabs>
