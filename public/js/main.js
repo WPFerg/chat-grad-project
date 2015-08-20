@@ -58,6 +58,7 @@
         $scope.selectedTab = 0;
         $scope.visibleChatFilter = {hidden: "!true"};
         $scope.addGroupSelectedUsers = [];
+        $scope.socket = null;
 
         // Setup
         $http.get("/api/user").then(function (userResult) {
@@ -71,13 +72,15 @@
                 });
                 $scope.allUsers = result.data;
 
-                $interval($scope.$pollServer, 1000);
+                //$interval($scope.$pollServer, 1000);
                 $scope.getConversations();
             });
 
             $http.get("/api/groups").then(function (result) {
                 $scope.groups = result.data;
             });
+
+            $scope.setUpSockets();
         }, function () {
             $http.get("/api/oauth/uri").then(function (result) {
                 $scope.loginUri = result.data.uri;
@@ -135,11 +138,15 @@
                 sent: new Date().valueOf()
             };
 
-            $http.post("/api/conversations/" + to, message);
+            if ($scope.socket) {
+                $scope.$sendSocketMessage(to, message);
+            } else {
+                $http.post("/api/conversations/" + to, message);
+            }
 
             message.from = $scope.user;
             chat.currentlyTypedMessage = "";
-            chat.messages.push(message);
+            //chat.messages.push(message);
             chat.lastMessage = message.sent;
         };
 
@@ -254,38 +261,57 @@
                 $scope.getConversation(chat.user.id, function(data) {
                     if (data) {
                         data.forEach(function(message) {
-                            message.from = $scope.$getUserById(message.from);
-
-                            if (typeof message.seen === "boolean") {
-                                message.seen = [message.seen];
-                            }
-
-                            if (message.from.id !== $scope.user.id) {
-                                message.userIndex = message.between.indexOf($scope.user.id);
-                            }
-
-                            var messagesAtSameTime = chat.messages.filter(function (otherMessage) {
-                                return otherMessage.sent === message.sent;
-                            });
-
-                            if (messagesAtSameTime.length === 0) {
-                                chat.messages.push(message);
-                                if (message.from.id !== $scope.user.id && !message.seen) {
-                                    $scope.notify(message);
-                                    message.seen = [true];
-                                }
-                            } else {
-                                // Update seen ticks
-                                messagesAtSameTime.forEach(function (otherMessage) {
-                                    otherMessage.seen = message.seen;
-                                });
-                            }
+                            $scope.$addMessageToChat(message, chat);
                         });
                     }
                     chat.isLoading = false;
                     chat.anyUnseen = false;
                 });
             }
+        };
+
+        $scope.$addMessageToChat = function(message, chat) {
+            message.from = $scope.$getUserById(message.from);
+            if (!chat) {
+                var possibleGroup = $scope.$getUserById(message.groupId);
+                var otherUser = message.between.filter(function (otherUser) {
+                    return otherUser !== $scope.user.id;
+                })[0];
+                var possibleUser = $scope.$getUserById(otherUser);
+                chat = $scope.$getChatByUser(possibleGroup || possibleUser);
+
+                // Still no chat? create
+                if (!chat) {
+                    chat = $scope.addChat(possibleGroup || possibleUser);
+                }
+            }
+
+            if (typeof message.seen === "boolean") {
+                message.seen = [message.seen];
+            }
+
+            if (message.from.id !== $scope.user.id) {
+                message.userIndex = message.between.indexOf($scope.user.id);
+            }
+
+            var messagesAtSameTime = chat.messages.filter(function (otherMessage) {
+                return otherMessage.sent === message.sent;
+            });
+
+            if (messagesAtSameTime.length === 0) {
+                chat.messages.push(message);
+                if (message.from.id !== $scope.user.id && !message.seen) {
+                    $scope.notify(message);
+                    message.seen = [true];
+                }
+            } else {
+                // Update seen ticks
+                messagesAtSameTime.forEach(function (otherMessage) {
+                    otherMessage.seen = message.seen;
+                });
+            }
+
+            $scope.$reorderTabs();
         };
 
         $scope.$pollServer = function() {
@@ -416,6 +442,23 @@
         $scope.clearAddGroupEnteredText = function() {
             $scope.addGroupEnteredText = "";
         };
+
+        $scope.setUpSockets = function() {
+            $scope.socket = io("http://" + window.location.host + "/realtime");
+            $scope.socket.on("connect", function () {
+                $scope.socket.emit("userId", $scope.user.id);
+            });
+            $scope.socket.on("message", function (message) {
+                $scope.$addMessageToChat(message);
+            });
+        };
+
+        $scope.$sendSocketMessage = function(to, message) {
+            if ($scope.socket) {
+                message.to = to;
+                $scope.socket.emit("message", message);
+            }
+        }
     });
 }
 )();

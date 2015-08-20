@@ -1,9 +1,13 @@
 var express = require("express");
 var cookieParser = require("cookie-parser");
+var http = require("http");
+var socketIo = require("socket.io");
 var bodyParser = require("body-parser");
 
 module.exports = function(port, db, githubAuthoriser) {
     var app = express();
+    var server = http.Server(app);
+    var io = socketIo(server);
 
     app.use(express.static("public"));
     app.use(cookieParser());
@@ -12,6 +16,26 @@ module.exports = function(port, db, githubAuthoriser) {
     var conversations = db.collection("conversations-wpferg2");
     var groups = db.collection("groups-wpferg");
     var sessions = {};
+    var activeSockets = {};
+
+    io.of("/realtime")
+        .on("connection", function (socket) {
+        var socketId;
+        socket.on("userId", function (message) {
+            socketId = message;
+            activeSockets[socketId] = socket;
+        });
+
+        socket.on("disconnect", function () {
+            delete activeSockets[socketId];
+        });
+
+        socket.on("message", function (message) {
+            var to = message.to;
+            delete message.to;
+            saveMessage(socketId, to, message);
+        });
+    });
 
     app.use(bodyParser.json());
 
@@ -164,45 +188,7 @@ module.exports = function(port, db, githubAuthoriser) {
             body: req.body.body
         };
 
-        groups.findOne({_id: toUserId}, function(err, doc) {
-            if (!err && doc && doc.users) {
-                var usersExcludingCurrentUser = doc.users.filter(function (user) {
-                    return user !== fromUserId;
-                });
-                message.between = [fromUserId].concat(usersExcludingCurrentUser);
-                message.groupId = doc._id;
-                send();
-            } else if (!err) {
-                message.between = [fromUserId, toUserId];
-                send();
-            } else {
-                res.send(500);
-            }
-        });
-
-        function send() {
-            populateSeen(message.between.length - 1);
-
-            if (toUserId && fromUserId && message.sent && message.body) {
-                conversations.insert(message, {}, function (err, docs) {
-                    if (err) {
-                        res.sendStatus(500);
-                    } else {
-                        res.sendStatus(200);
-                    }
-                });
-            } else {
-                res.sendStatus(401);
-            }
-        }
-
-        function populateSeen(numberOfParticipants) {
-            message.seen = [];
-
-            for (var i = 0; i < numberOfParticipants; i++) {
-                message.seen.push(false);
-            }
-        }
+        saveMessage(fromUserId, toUserId, message, res);
     });
 
     app.get("/api/conversations/:userId", function(req, res) {
@@ -241,20 +227,7 @@ module.exports = function(port, db, githubAuthoriser) {
 
                     // Mark as seen
                     docs.forEach(function (message) {
-
-                        var indexOfUserInBetween = message.between.indexOf(req.session.user);
-
-                        if (indexOfUserInBetween > 0 && !message.seen[indexOfUserInBetween - 1]) {
-                            message.seen[indexOfUserInBetween - 1] = true;
-                            conversations.update({
-                                between: message.between,
-                                sent: message.sent
-                            }, {
-                                $set: {
-                                    seen: message.seen
-                                }
-                            });
-                        }
+                        updateSeen(req.session.user, message);
                     });
                 }
             });
@@ -299,5 +272,89 @@ module.exports = function(port, db, githubAuthoriser) {
         });
     });
 
-    return app.listen(port);
+    function updateSeen(user, message) {
+        var indexOfUserInBetween = message.between.indexOf(user);
+
+        if (indexOfUserInBetween > 0 && !message.seen[indexOfUserInBetween - 1]) {
+            message.seen[indexOfUserInBetween - 1] = true;
+            conversations.update({
+                between: message.between,
+                sent: message.sent
+            }, {
+                $set: {
+                    seen: message.seen
+                }
+            });
+        }
+    }
+
+    function saveMessage(fromId, toId, message, res) {
+        groups.findOne({_id: toId}, function(err, doc) {
+            if (!err && doc && doc.users) {
+                var usersExcludingCurrentUser = doc.users.filter(function (user) {
+                    return user !== fromId;
+                });
+                message.between = [fromId].concat(usersExcludingCurrentUser);
+                message.groupId = doc._id;
+                send(res);
+            } else if (!err) {
+                message.between = [fromId, toId];
+                send(res);
+            } else {
+                if (res) {
+                    res.send(500);
+                }
+            }
+        });
+
+        function send(res) {
+            populateSeen(message.between.length - 1);
+
+            if (toId && fromId && message.sent && message.body) {
+                conversations.insert(message, {}, function (err, docs) {
+                    if (err) {
+                        if (res) {
+                            res.sendStatus(500);
+                        }
+                    } else {
+                        if (res) {
+                            res.sendStatus(200);
+                        }
+                        alertSocketListeners();
+                    }
+                });
+            } else {
+                if (res) {
+                    res.sendStatus(401);
+                }
+            }
+        }
+
+        function populateSeen(numberOfParticipants) {
+            message.seen = [];
+
+            for (var i = 0; i < numberOfParticipants; i++) {
+                message.seen.push(false);
+            }
+        }
+
+        function alertSocketListeners() {
+            var usersToAlert = message.between;
+            usersToAlert.forEach(function (user) {
+                if (activeSockets[user]) {
+                    activeSockets[user].emit("message", {
+                        from: message.between[0],
+                        groupId: message.groupId,
+                        between: message.between,
+                        sent: message.sent,
+                        body: message.body,
+                        seen: message.seen
+                    });
+                    updateSeen(user, message);
+                }
+            });
+        }
+    }
+
+    return server.listen(port);
 };

@@ -4,9 +4,9 @@
         <div><b>{{message.from.name || message.from.id}}:</b> {{message.body}}</div>
         <div class="chat-sent-time">
             {{message.sent | date: 'h:mm a d MMM'}}
-            <span ng-repeat="user in message.seen"
-                  class="material-icons"
-                  ng-if="user">done</span>
+            <span ng-repeat="user in message.seen track by $index">
+            <span class="material-icons" ng-if="user">done</span>
+            </span>
         </div>
     </div>
 
