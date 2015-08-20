@@ -29,17 +29,24 @@
                     <md-button class="md-raised md-accent" ng-hide="desktopNotifications" ng-click="setUpNotifications()">
                         Enable Desktop Notifications
                     </md-button>
-                    <md-button class="md-fab md-primary add-group-button" aria-label="Add Group" ng-click="showAddGroupDialog()">
-                        <md-icon class="material-icons">people</md-icon>
-                        <md-tooltip>
-                            Add Group
-                        </md-tooltip>
-                    </md-button>
                     <add-group ng-show="showAddGroup"></add-group>
 
-                    <md-list ng-show="groups.length > 0">
+                    <md-list>
                         <md-subheader class="md-accent">Groups</md-subheader>
-                        <md-list-item ng-repeat="group in groups" ng-click="addChat(group)">
+                        <md-button class="md-fab md-primary add-group-button" aria-label="Add Group" ng-click="showAddGroupDialog()">
+                            <md-icon class="material-icons">add</md-icon>
+                            <md-tooltip>
+                                Add Group
+                            </md-tooltip>
+                        </md-button>
+                        <md-button class="md-fab md-primary add-group-button" aria-label="Add Group" ng-click="toggleEditMode()">
+                            <md-icon class="material-icons">create</md-icon>
+                            <md-tooltip>
+                                Edit Group
+                            </md-tooltip>
+                        </md-button>
+
+                        <md-list-item ng-repeat="group in groups" ng-click="viewOrEditGroup(group)">
                             <span class="md-avatar group-avatar">
                                 <div class="group-avatar-inner">
                                     {{group.id.substr(0,1).toUpperCase();}}
@@ -48,8 +55,8 @@
                             <p>
                                 <b ng-bind="group.id"></b>: {{group.title}}
                             </p>
-                            <md-icon class="material-icons" style="font-height: 1em;">mode edit</md-icon>
-                            <md-icon class="material-icons">message</md-icon>
+                            <md-icon class="material-icons" ng-show="groupEditMode">create</md-icon>
+                            <md-icon class="material-icons" ng-hide="groupEditMode">message</md-icon>
                             <md-divider></md-divider>
                         </md-list-item>
                     </md-list>

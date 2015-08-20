@@ -265,7 +265,8 @@ module.exports = function(port, db, githubAuthoriser) {
                 res.json(docs.map(function (group) {
                     return {
                         id: group._id,
-                        title: group.title
+                        title: group.title,
+                        users: group.users
                     };
                 }));
             }

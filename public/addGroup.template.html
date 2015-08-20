@@ -1,16 +1,16 @@
-<h2 class="md-primary">Add a Group</h2>
+<h2 class="md-primary">{{addGroupIdDisabled ? "Edit" : "Add"}} a Group</h2>
 
 <md-input-container>
     <label>Group ID</label>
-    <input ng-model="addGroupId" />
+    <input ng-model="addGroupId" ng-disabled="addGroupIdDisabled"/>
 </md-input-container>
 <md-input-container>
     <label>Group Name</label>
     <input ng-model="addGroupName" />
 </md-input-container>
 <section>
-    <h4>Select the users you wish to add to the chat.</h4>
-    <md-chips ng-model="addGroupSelectedUsers" readonly="true">
+    <h4>Select the users you wish to be in the chat.</h4>
+    <md-chips ng-model="addGroupSelectedUsers">
         <md-chip-template>{{$chip.name || $chip.id}}</md-chip-template>
     </md-chips>
     <md-autocomplete
@@ -23,5 +23,5 @@
         </md-item-template>
     </md-autocomplete>
 </section>
-<md-button class="md-button md-raised md-primary" ng-click="addGroupCreate()">Create Group</md-button>
+<md-button class="md-button md-raised md-primary" ng-click="addGroupCreate()">{{addGroupIdDisabled ? "Edit" : "Create"}} Group</md-button>
 <md-button class="md-button md-accent" ng-click="addGroupCancel()">Cancel</md-button>

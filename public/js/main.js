@@ -176,9 +176,31 @@
 
         $scope.addGroupCancel = function() {
             $scope.showAddGroup = false;
+            $scope.addGroupIdDisabled = false;
             $scope.addGroupSelectedUsers = [];
             $scope.addGroupId = "";
             $scope.addGroupName = "";
+        };
+
+        $scope.viewOrEditGroup = function(group) {
+            if ($scope.groupEditMode) {
+                $scope.editGroup(group);
+            } else {
+                $scope.addChat(group);
+            }
+        };
+
+        $scope.editGroup = function(group) {
+            console.log(group);
+            $scope.showAddGroup = true;
+            $scope.addGroupIdDisabled = true;
+            $scope.addGroupId = group.id;
+            $scope.addGroupName = group.title;
+            $scope.addGroupSelectedUsers = group.users.map(function(user) { return $scope.$getUserById(user); });
+        };
+
+        $scope.toggleEditMode = function() {
+            $scope.groupEditMode = !$scope.groupEditMode;
         };
 
         $scope.addGroupCreate = function() {
@@ -193,6 +215,7 @@
             if (gId) {
                 $http.put("/api/groups/" + gId, groupObj).then(function (success) {
                     $scope.showAddGroup = false;
+                    $scope.groupEditMode = false;
                     $scope.addGroupSelectedUsers = [];
                     $scope.addGroupName = "";
 
