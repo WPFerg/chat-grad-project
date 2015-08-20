@@ -191,6 +191,13 @@ module.exports = function(port, db, githubAuthoriser) {
         saveMessage(fromUserId, toUserId, message, res);
     });
 
+    app.delete("/api/conversations/:userId", function (req, res) {
+        var toUser = req.params.userId;
+        var fromUser = req.session.user;
+        deleteMessage(fromUser, toUser);
+        res.sendStatus(200);
+    });
+
     app.get("/api/conversations/:userId", function(req, res) {
         var toUserId = req.params.userId;
         var fromUserId = req.session.user;
@@ -319,7 +326,7 @@ module.exports = function(port, db, githubAuthoriser) {
                 send(res);
             } else {
                 if (res) {
-                    res.send(500);
+                    res.sendStatus(500);
                 }
             }
         });
@@ -372,6 +379,27 @@ module.exports = function(port, db, githubAuthoriser) {
             });
         }
     }
+
+    function deleteMessage(fromId, toId) {
+        groups.findOne({_id: toId}, function (err, doc) {
+            if (!err && doc && doc.users) {
+                confirmDeletion(doc.users, doc.groupId);
+            } else if (!err) {
+                confirmDeletion([fromId, toId]);
+            }
+        });
+
+        function confirmDeletion(between, groupId) {
+            conversations.remove({
+                between:
+                {
+                    $all: between
+                },
+                groupId: groupId
+            });
+        }
+    }
+
 
     return server.listen(port);
 };

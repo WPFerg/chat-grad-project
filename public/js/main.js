@@ -248,6 +248,8 @@
             if (index < $scope.selectedTab) {
                 $scope.selectedTab--;
             }
+
+            $http.delete("/api/conversations/" + $scope.activeChats[index].user.id);
         };
 
         $scope.chatHasUnreadMessages = function (user) {
