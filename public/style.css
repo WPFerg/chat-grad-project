@@ -65,3 +65,13 @@ received-chat-item .chat-detail,
 sent-chat-item .chat-detail {
   margin-top: 10px;
 }
+span.md-avatar.group-avatar {
+  background-color: black;
+}
+span.md-avatar.group-avatar div.group-avatar-inner {
+  font-weight: 200;
+  margin-top: 2px;
+  color: white;
+  text-align: center;
+  font-size: 2em;
+}

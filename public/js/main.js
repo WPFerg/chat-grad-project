@@ -193,6 +193,16 @@
             if (gId) {
                 $http.put("/api/groups/" + gId, groupObj).then(function (success) {
                     $scope.showAddGroup = false;
+                    $scope.addGroupSelectedUsers = [];
+                    $scope.addGroupName = "";
+
+                    $scope.addChat({
+                        id: gId
+                    });
+                    $scope.groups.push({
+                        id: gId,
+                        title: groupObj.title
+                    });
                 });
             }
         };
@@ -463,7 +473,7 @@
                 message.to = to;
                 $scope.socket.emit("message", message);
             }
-        }
+        };
     });
 }
 )();
