@@ -32,19 +32,23 @@
                     <add-group ng-show="showAddGroup"></add-group>
 
                     <md-list>
-                        <md-subheader class="md-accent">Groups</md-subheader>
-                        <md-button class="md-fab md-primary add-group-button" aria-label="Add Group" ng-click="showAddGroupDialog()">
-                            <md-icon class="material-icons">add</md-icon>
-                            <md-tooltip>
-                                Add Group
-                            </md-tooltip>
-                        </md-button>
-                        <md-button class="md-fab md-primary add-group-button" aria-label="Add Group" ng-click="toggleEditMode()">
-                            <md-icon class="material-icons">create</md-icon>
-                            <md-tooltip>
-                                Edit Group
-                            </md-tooltip>
-                        </md-button>
+                        <md-subheader class="md-accent">
+                            Groups
+                            <span flex></span>
+                            <md-menu>
+                                <md-button class="md-icon-button material-icons same-font-size" ng-click="$mdOpenMenu($event)">
+                                    menu
+                                </md-button>
+                                <md-menu-content width="3">
+                                    <md-menu-item ng-click="showAddGroupDialog()">
+                                        <md-button>Add Group</md-button>
+                                    </md-menu-item>
+                                    <md-menu-item ng-click="toggleEditMode()">
+                                        <md-button>{{groupEditMode ? "Exit Editing Mode" : "Edit Group"}}</md-button>
+                                    </md-menu-item>
+                                </md-menu-content>
+                            </md-menu>
+                        </md-subheader>
 
                         <md-list-item ng-repeat="group in groups" ng-click="viewOrEditGroup(group)">
                             <span class="md-avatar group-avatar">

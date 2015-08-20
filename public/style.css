@@ -75,3 +75,6 @@ span.md-avatar.group-avatar div.group-avatar-inner {
   text-align: center;
   font-size: 2em;
 }
+.same-font-size {
+  font-size: 1em;
+}
