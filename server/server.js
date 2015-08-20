@@ -285,7 +285,23 @@ module.exports = function(port, db, githubAuthoriser) {
                     seen: message.seen
                 }
             });
+            pushSeenUpdate(message);
         }
+    }
+
+    function pushSeenUpdate(message) {
+        message.between.forEach(function (user) {
+            if (activeSockets[user]) {
+                activeSockets[user].emit("message", {
+                    from: message.between[0],
+                    groupId: message.groupId,
+                    between: message.between,
+                    sent: message.sent,
+                    body: message.body,
+                    seen: message.seen
+                });
+            }
+        });
     }
 
     function saveMessage(fromId, toId, message, res) {

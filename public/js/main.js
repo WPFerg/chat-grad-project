@@ -72,8 +72,7 @@
                 });
                 $scope.allUsers = result.data;
 
-                //$interval($scope.$pollServer, 1000);
-                $scope.getConversations();
+                $scope.$pollServer();
             });
 
             $http.get("/api/groups").then(function (result) {
@@ -261,7 +260,7 @@
                 $scope.getConversation(chat.user.id, function(data) {
                     if (data) {
                         data.forEach(function(message) {
-                            $scope.$addMessageToChat(message, chat);
+                            $scope.$addMessageToChat(message, chat, true);
                         });
                     }
                     chat.isLoading = false;
@@ -270,7 +269,7 @@
             }
         };
 
-        $scope.$addMessageToChat = function(message, chat) {
+        $scope.$addMessageToChat = function(message, chat, hideAllNotifications) {
             message.from = $scope.$getUserById(message.from);
             if (!chat) {
                 var possibleGroup = $scope.$getUserById(message.groupId);
@@ -300,7 +299,7 @@
 
             if (messagesAtSameTime.length === 0) {
                 chat.messages.push(message);
-                if (message.from.id !== $scope.user.id && !message.seen) {
+                if (message.from.id !== $scope.user.id && !hideAllNotifications) {
                     $scope.notify(message);
                     message.seen = [true];
                 }
@@ -317,6 +316,12 @@
         $scope.$pollServer = function() {
             $scope.$pollActiveChat();
             $scope.getConversations();
+
+            // Have a slower poll interval if there's a socket open;
+            // allows compatibility for other messaging servers using
+            // the same api.
+            var timeout = $scope.socket ? 10000 : 1000;
+            $timeout($scope.$pollServer, timeout);
         };
 
         $scope.setUpNotifications = function() {
@@ -444,7 +449,7 @@
         };
 
         $scope.setUpSockets = function() {
-            $scope.socket = io("http://" + window.location.host + "/realtime");
+            $scope.socket = io(window.location.protocol + "//" + window.location.host + "/realtime");
             $scope.socket.on("connect", function () {
                 $scope.socket.emit("userId", $scope.user.id);
             });
