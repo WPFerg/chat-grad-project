@@ -188,7 +188,11 @@ module.exports = function(port, db, githubAuthoriser) {
             body: req.body.body
         };
 
-        saveMessage(fromUserId, toUserId, message, res);
+        if (message.body) {
+            saveMessage(fromUserId, toUserId, message, res);
+        } else {
+            res.sendStatus(401);
+        }
     });
 
     app.delete("/api/conversations/:userId", function (req, res) {

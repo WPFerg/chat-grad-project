@@ -43,13 +43,18 @@ describe("server", function() {
                 find: sinon.stub(),
                 insert: sinon.stub(),
                 update: sinon.stub()
+            },
+            groups: {
+                findOne: sinon.stub(),
+                find: sinon.stub()
             }
         };
         db = {
             collection: sinon.stub()
         };
         db.collection.withArgs("users").returns(dbCollections.users);
-        db.collection.withArgs("conversations-wpferg").returns(dbCollections.conversations);
+        db.collection.withArgs("conversations-wpferg2").returns(dbCollections.conversations);
+        db.collection.withArgs("groups-wpferg").returns(dbCollections.groups);
 
         githubAuthoriser = {
             authorise: function() {},
@@ -397,10 +402,12 @@ describe("server", function() {
     describe("GET /api/conversation/:userId", function() {
         var requestUrl = baseUrl + "/api/conversations";
         var allConversations;
+        var allGroups;
         beforeEach(function() {
             allConversations = {
                 toArray: sinon.stub()
             };
+            allGroups = dbCollections.groups;
             dbCollections.conversations.find.returns(allConversations);
         });
 
@@ -421,6 +428,10 @@ describe("server", function() {
 
         it("responds with status code 200 if user is authenticated", function(done) {
             authenticateUser(testGithubUser, testToken, function() {
+                allGroups.findOne.callsArgWith(1, null, {
+                    users: ["bob", "charlie"]
+                });
+
                 allConversations.toArray.callsArgWith(0, null, [
                     {
                         between: ["bob", "charlie"],
@@ -451,6 +462,9 @@ describe("server", function() {
         it("responds with status code 500 if there is a db error", function(done) {
             authenticateUser(testGithubUser, testToken, function() {
 
+                allGroups.findOne.callsArgWith(1, null, {
+                    users: ["bob", "charlie"]
+                });
                 allConversations.toArray.callsArgWith(0, {error: "somethign"}, null);
                 request({url: requestUrl + "/charlie", jar: cookieJar}, function(error, response) {
                     assert.equal(response.statusCode, 500);
@@ -473,10 +487,12 @@ describe("server", function() {
     describe("POST /api/conversation/:userId", function() {
         var requestUrl = baseUrl + "/api/conversations";
         var allConversations;
-        beforeEach(function () {
+        var allGroups;
+        beforeEach(function() {
             allConversations = {
                 toArray: sinon.stub()
             };
+            allGroups = dbCollections.groups;
             dbCollections.conversations.find.returns(allConversations);
         });
 
@@ -497,6 +513,9 @@ describe("server", function() {
 
         it("responds with status code 200 if user is authenticated", function(done) {
             authenticateUser(testGithubUser, testToken, function() {
+                allGroups.findOne.callsArgWith(1, null, {
+                    users: ["bob", "charlie"]
+                });
                 dbCollections.conversations.insert.callsArgWith(2, null, "this is not an error");
                 request.post({url: requestUrl + "/charlie",
                     jar: cookieJar,
@@ -513,6 +532,9 @@ describe("server", function() {
 
         it("responds with status code 500 if there is a db error", function(done) {
             authenticateUser(testGithubUser, testToken, function() {
+                allGroups.findOne.callsArgWith(1, null, {
+                    users: ["bob", "charlie"]
+                });
                 dbCollections.conversations.insert.callsArgWith(2, "this is an error", null);
                 request.post({url: requestUrl + "/charlie",
                     jar: cookieJar,
@@ -529,6 +551,9 @@ describe("server", function() {
 
         it("responds with status code 401 if the post body is invalid", function(done) {
             authenticateUser(testGithubUser, testToken, function() {
+                allGroups.findOne.callsArgWith(1, null, {
+                    users: ["bob", "charlie"]
+                });
                 dbCollections.conversations.insert.callsArgWith(2, null, "this is not an error");
                 request.post({url: requestUrl + "/charlie",
                     jar: cookieJar,
