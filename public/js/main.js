@@ -31,7 +31,7 @@
     app.directive("mdTabContent", function() {
         return {
             restrict: "E",
-            link: function(scope, element, attrs) {
+            link: function (scope, element) {
                 scope.isAtBottom = true;
                 element = element[0];
 
@@ -52,7 +52,7 @@
         };
     });
 
-    app.controller("ChatController", function($scope, $http, $interval, $timeout, $mdToast, $mdDialog) {
+    app.controller("ChatController", function ($scope, $http, $interval, $timeout, $mdToast) {
         $scope.loggedIn = false;
         $scope.activeChats = [];
         $scope.selectedTab = 0;
@@ -69,6 +69,9 @@
             $http.get("/api/users").then(function (result) {
                 $scope.users = result.data.filter(function (user) {
                     return $scope.user.id !== user.id;
+                }).map(function(user) {
+                    user.searchableIndex = user.name || user.id;
+                    return user;
                 });
                 $scope.allUsers = result.data;
 
@@ -191,7 +194,6 @@
         };
 
         $scope.editGroup = function(group) {
-            console.log(group);
             $scope.showAddGroup = true;
             $scope.addGroupIdDisabled = true;
             $scope.addGroupId = group.id;
@@ -213,7 +215,7 @@
             };
             var gId = $scope.addGroupId;
             if (gId) {
-                $http.put("/api/groups/" + gId, groupObj).then(function (success) {
+                $http.put("/api/groups/" + gId, groupObj).then(function () {
                     $scope.showAddGroup = false;
                     $scope.groupEditMode = false;
                     $scope.addGroupSelectedUsers = [];
@@ -278,7 +280,7 @@
             })[0];
         };
 
-        $scope.$watch("selectedTab", function(current, old) {
+        $scope.$watch("selectedTab", function (current) {
             if (current !== 0) {
                 var chat = $scope.activeChats[current - 1];
                 if (chat.messages.length === 0) {

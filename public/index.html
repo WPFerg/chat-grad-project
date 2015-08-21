@@ -51,11 +51,11 @@
                         </md-subheader>
 
                         <md-list-item ng-repeat="group in groups" ng-click="viewOrEditGroup(group)">
-                            <span class="md-avatar group-avatar">
+                            <div class="md-avatar group-avatar">
                                 <div class="group-avatar-inner">
                                     {{group.id.substr(0,1).toUpperCase();}}
                                 </div>
-                            </span>
+                            </div>
                             <p>
                                 <b ng-bind="group.id"></b>: {{group.title}}
                             </p>
@@ -65,9 +65,14 @@
                         </md-list-item>
                     </md-list>
 
+                    <md-input-container>
+                        <label>Search</label>
+                            <input type="text" ng-model="search.searchableIndex"  title="Search"/>
+                    </md-input-container>
+
                     <md-list>
                         <md-subheader class="md-accent">Users</md-subheader>
-                        <md-list-item ng-repeat="user in users" ng-click="addChat(user)">
+                        <md-list-item ng-repeat="user in users | filter:search" ng-click="addChat(user)">
                             <img class="md-avatar" src="{{user.avatarUrl}}"/>
                             <p>{{user.name || user.id}}</p>
                             <md-icon class="material-icons" ng-class="{'md-primary': chatHasUnreadMessages(user)}">message</md-icon>
@@ -97,7 +102,7 @@
                             <form ng-submit="sendMessage(chat)" layout="row">
                                 <md-input-container flex="90">
                                     <label>Message</label>
-                                    <input ng-model="chat.currentlyTypedMessage" name="typedMessage" />
+                                    <input ng-model="chat.currentlyTypedMessage" name="typedMessage"  title="Message"/>
                                 </md-input-container>
                                 <md-input-container flex="10">
                                     <md-button class="md-raised md-primary md-icon-button material-icons">

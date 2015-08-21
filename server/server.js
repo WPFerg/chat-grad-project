@@ -400,6 +400,5 @@ module.exports = function(port, db, githubAuthoriser) {
         }
     }
 
-
     return server.listen(port);
 };
