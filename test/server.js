@@ -2,6 +2,7 @@ var server = require("../server/server");
 var request = require("request");
 var assert = require("chai").assert;
 var sinon = require("sinon");
+var io = require("socket.io-client");
 
 var testPort = 52684;
 var baseUrl = "http://localhost:" + testPort;
@@ -637,6 +638,137 @@ describe("server", function() {
                     done();
                 });
             });
+        });
+    });
+    describe("WebSocket Connections", function() {
+        var socket1;
+        var socket2;
+        var allConversations;
+        var allGroups;
+        beforeEach(function (done) {
+            var numReady = 0;
+            socket1 = io.connect("http://localhost:" + testPort + "/realtime", {
+                "force new connection": true
+            });
+            socket2 = io.connect("http://localhost:" + testPort + "/realtime", {
+                "force new connection": true
+            });
+
+            socket1.on("connect", function() {
+                socket1.emit("userId", "bob");
+                socketReady();
+            });
+            socket2.on("connect", function() {
+                socket2.emit("userId", "charlie");
+                socketReady();
+            });
+
+            function socketReady() {
+                numReady++;
+                if (numReady === 2) {
+                    done();
+                }
+            }
+
+            allConversations = {
+                toArray: sinon.stub()
+            };
+            allGroups = dbCollections.groups;
+            dbCollections.conversations.find.returns(allConversations);
+        });
+
+        afterEach(function() {
+            socket1.close();
+            socket2.close();
+        });
+
+        it("should connect", function(done) {
+            assert.equal(socket1.connected, true);
+            assert.equal(socket2.connected, true);
+            done();
+        });
+
+        it("should allow messages to be sent and broadcast to recipients", function (done) {
+            allGroups.findOne.callsArgWith(1, null, null);
+            dbCollections.conversations.insert.callsArgWith(2, null);
+
+            socket1.emit("message", {
+                to: "charlie",
+                body: "yes",
+                sent: 1234567
+            });
+
+            socket2.on("message", function() {
+                done();
+            });
+        });
+
+        it("should allow messages to be sent, but on insertion error wouldn't be rebroadcast", function (done) {
+            allGroups.findOne.callsArgWith(1, null, null);
+            dbCollections.conversations.insert.callsArgWith(2, {"Insertion error": "Whoops"});
+
+            socket1.emit("message", {
+                to: "charlie",
+                body: "yes",
+                sent: 1234567
+            });
+
+            socket2.on("message", function() {
+                done(new Error("It was rebroadcast."));
+            });
+
+            setTimeout(done, 1900);
+        });
+
+        it("should allow messages to be sent, but on lookup error wouldn't be rebroadcast", function (done) {
+            allGroups.findOne.callsArgWith(1, {"Whoops": 404}, null);
+            dbCollections.conversations.insert.callsArgWith(2,  null, null);
+
+            socket1.emit("message", {
+                to: "charlie",
+                body: "yes",
+                sent: 1234567
+            });
+
+            socket2.on("message", function() {
+                done(new Error("It was rebroadcast."));
+            });
+
+            setTimeout(done, 1900);
+        });
+
+        it("should allow messages to be sent to groups", function (done) {
+            allGroups.findOne.callsArgWith(1, null, {
+                groupId: "something",
+                users: ["bob", "charlie"]
+            });
+            dbCollections.conversations.insert.callsArgWith(2, null, {});
+
+            socket1.emit("message", {
+                to: "charlie",
+                body: "yes",
+                sent: 1234567
+            });
+
+            socket2.on("message", function() {
+                done();
+            });
+        });
+
+        it("should allow messages to be sent, but not rebroadcast if the message sent is invalid", function (done) {
+            allGroups.findOne.callsArgWith(1, null, {
+                groupId: "something",
+                users: ["bob", "charlie"]
+            });
+            dbCollections.conversations.insert.callsArgWith(2, null, {});
+
+            socket1.emit("message", {});
+
+            socket2.on("message", function() {
+                done(new Error("It was rebroadcast."));
+            });
+
+            setTimeout(done, 1900);
         });
     });
 });
