@@ -307,6 +307,13 @@ describe("server", function() {
                         body: "Hah",
                         sent: 1234,
                         seen: false
+                    },
+                    {
+                        between: ["bob", "charlie"],
+                        body: "Hah",
+                        sent: 1234,
+                        seen: false,
+                        groupId: 12
                     }
                 ]);
                 request({url: requestUrl, jar: cookieJar}, function(error, response) {
@@ -428,6 +435,37 @@ describe("server", function() {
 
         it("responds with status code 200 if user is authenticated", function(done) {
             authenticateUser(testGithubUser, testToken, function() {
+                allGroups.findOne.callsArgWith(1, null, {});
+
+                allConversations.toArray.callsArgWith(0, null, [
+                    {
+                        between: ["bob", "charlie"],
+                        sent: 2384907238947,
+                        body: "hello",
+                        seen: [false]
+                    },
+                    {
+                        between: ["charlie", "bob"],
+                        sent: 2384907238949,
+                        body: "hello",
+                        seen: [false]
+                    },
+                    {
+                        between: ["charlie", "bob"],
+                        sent: 2384907238949,
+                        body: "hello",
+                        seen: [true]
+                    }
+                ]);
+                request({url: requestUrl + "/charlie", jar: cookieJar}, function(error, response) {
+                    assert.equal(response.statusCode, 200);
+                    done();
+                });
+            });
+        });
+
+        it("responds with status code 200 if user is authenticated, querying group info", function(done) {
+            authenticateUser(testGithubUser, testToken, function() {
                 allGroups.findOne.callsArgWith(1, null, {
                     users: ["bob", "charlie"]
                 });
@@ -513,6 +551,23 @@ describe("server", function() {
 
         it("responds with status code 200 if user is authenticated", function(done) {
             authenticateUser(testGithubUser, testToken, function() {
+                allGroups.findOne.callsArgWith(1, null, {});
+                dbCollections.conversations.insert.callsArgWith(2, null, "this is not an error");
+                request.post({url: requestUrl + "/charlie",
+                    jar: cookieJar,
+                    json: {
+                        body: "Hello!",
+                        sent: 1234
+                    }
+                }, function(error, response) {
+                    assert.equal(response.statusCode, 200);
+                    done();
+                });
+            });
+        });
+
+        it("responds with status code 200 if user is authenticated, and requests group info", function(done) {
+            authenticateUser(testGithubUser, testToken, function() {
                 allGroups.findOne.callsArgWith(1, null, {
                     users: ["bob", "charlie"]
                 });
@@ -530,11 +585,28 @@ describe("server", function() {
             });
         });
 
-        it("responds with status code 500 if there is a db error", function(done) {
+        it("responds with status code 500 if there is a db error adding the messaeg", function(done) {
             authenticateUser(testGithubUser, testToken, function() {
                 allGroups.findOne.callsArgWith(1, null, {
                     users: ["bob", "charlie"]
                 });
+                dbCollections.conversations.insert.callsArgWith(2, "this is an error", null);
+                request.post({url: requestUrl + "/charlie",
+                    jar: cookieJar,
+                    json: {
+                        body: "Hello!",
+                        sent: 1234
+                    }
+                }, function(error, response) {
+                    assert.equal(response.statusCode, 500);
+                    done();
+                });
+            });
+        });
+
+        it("responds with status code 500 if there is a db error querying groups", function(done) {
+            authenticateUser(testGithubUser, testToken, function() {
+                allGroups.findOne.callsArgWith(1, {}, null);
                 dbCollections.conversations.insert.callsArgWith(2, "this is an error", null);
                 request.post({url: requestUrl + "/charlie",
                     jar: cookieJar,
