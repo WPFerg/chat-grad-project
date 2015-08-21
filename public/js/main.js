@@ -206,10 +206,13 @@
         };
 
         $scope.addGroupCreate = function() {
-            $scope.addGroupSelectedUsers.push($scope.user);
+            var usersThatArentThisUser = $scope.addGroupSelectedUsers.filter(function (user) {
+                return user.id !== $scope.user.id;
+            });
+            usersThatArentThisUser.push($scope.user);
             var groupObj = {
                 title: $scope.addGroupName,
-                users: $scope.addGroupSelectedUsers.map(function (user) {
+                users: usersThatArentThisUser.map(function (user) {
                     return user.id;
                 })
             };
@@ -224,10 +227,19 @@
                     $scope.addChat({
                         id: gId
                     });
-                    $scope.groups.push({
-                        id: gId,
-                        title: groupObj.title
-                    });
+
+                    var existingGroupsWithThisId = $scope.groups.filter(function (group) {
+                        return group.id === gId;
+                    })[0];
+
+                    if (existingGroupsWithThisId) {
+                        existingGroupsWithThisId.title = groupObj.title;
+                    } else {
+                        $scope.groups.push({
+                            id: gId,
+                            title: groupObj.title
+                        });
+                    }
                 });
             }
         };
