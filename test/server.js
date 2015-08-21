@@ -43,11 +43,13 @@ describe("server", function() {
             conversations: {
                 find: sinon.stub(),
                 insert: sinon.stub(),
-                update: sinon.stub()
+                update: sinon.stub(),
+                remove: sinon.spy()
             },
             groups: {
                 findOne: sinon.stub(),
-                find: sinon.stub()
+                find: sinon.stub(),
+                save: sinon.stub()
             }
         };
         db = {
@@ -640,6 +642,195 @@ describe("server", function() {
             });
         });
     });
+
+    describe("DELETE /api/conversations/:userId", function() {
+        var requestUrl = baseUrl + "/api/conversations/charlie";
+        var allConversations;
+        beforeEach(function () {
+            allConversations = {
+                toArray: sinon.stub()
+            };
+            dbCollections.conversations.find.returns(allConversations);
+        });
+
+        it("responds with status code 401 if user not authenticated", function (done) {
+            request.del(requestUrl, function (error, response) {
+                assert.equal(response.statusCode, 401);
+                done();
+            });
+        });
+
+        it("responds with 401 if the token is expired", function (done) {
+            cookieJar.setCookie(request.cookie("sessionToken=" + testExpiredToken), baseUrl);
+            request.del({url: requestUrl, jar: cookieJar}, function (error, response) {
+                assert.equal(response.statusCode, 401);
+                done();
+            });
+        });
+
+        it("responds with 200 if the user is authenticated and a group is provided", function (done) {
+            authenticateUser(testGithubUser, testToken, function() {
+
+                dbCollections.groups.findOne.callsArgWith(1, null, {users: ["a", "b"]});
+
+                request.del({url: requestUrl, jar: cookieJar}, function (error, response) {
+                    assert.equal(response.statusCode, 200);
+                    assert.equal(dbCollections.conversations.remove.called, true);
+                    done();
+                });
+            });
+        });
+
+        it("responds with 200 if the user is authenticated", function (done) {
+            authenticateUser(testGithubUser, testToken, function() {
+
+                dbCollections.groups.findOne.callsArgWith(1, null, {notUsers: [true]});
+
+                request.del({url: requestUrl, jar: cookieJar}, function (error, response) {
+                    assert.equal(response.statusCode, 200);
+                    assert.equal(dbCollections.conversations.remove.called, true);
+                    done();
+                });
+            });
+        });
+        it("does not delete if there is an error looking for matching groups", function (done) {
+            authenticateUser(testGithubUser, testToken, function() {
+
+                dbCollections.groups.findOne.callsArgWith(1, {}, null);
+
+                request.del({url: requestUrl, jar: cookieJar}, function (error, response) {
+                    assert.equal(dbCollections.conversations.remove.called, false);
+                    done();
+                });
+            });
+        });
+    });
+
+    describe("GET /api/groups", function() {
+        var requestUrl = baseUrl + "/api/groups";
+        var allGroups;
+
+        beforeEach(function() {
+            allGroups = {
+                toArray: sinon.stub()
+            };
+
+            dbCollections.groups.find.returns(allGroups);
+        });
+
+        it("responds with status code 401 if user not authenticated", function (done) {
+            request(requestUrl, function (error, response) {
+                assert.equal(response.statusCode, 401);
+                done();
+            });
+        });
+
+        it("responds with 401 if the token is expired", function (done) {
+            cookieJar.setCookie(request.cookie("sessionToken=" + testExpiredToken), baseUrl);
+            request({url: requestUrl, jar: cookieJar}, function (error, response) {
+                assert.equal(response.statusCode, 401);
+                done();
+            });
+        });
+
+        it("responds with 200 and outputs correct data if user is authenticated", function(done) {
+            authenticateUser(testGithubUser, testToken, function() {
+                allGroups.toArray.callsArgWith(0, null, [{
+                    _id: "bob's dodgy gruop",
+                    title: "Not Dodgy At All",
+                    users: ["bob", "bob's 'friend'"]
+                }]);
+
+                request({url: requestUrl, jar: cookieJar}, function (error, response, body) {
+                    assert.deepEqual(JSON.parse(body), [{
+                        id: "bob's dodgy gruop",
+                        title: "Not Dodgy At All",
+                        users: ["bob", "bob's 'friend'"]
+                    }]);
+                    assert.equal(response.statusCode, 200);
+                    done();
+                });
+            });
+        });
+
+        it("responds with 500 if there is a db error", function(done) {
+            authenticateUser(testGithubUser, testToken, function() {
+                allGroups.toArray.callsArgWith(0, {"Should've coded": "Better"}, null);
+
+                request({url: requestUrl, jar: cookieJar}, function (error, response) {
+                    assert.equal(response.statusCode, 500);
+                    done();
+                });
+            });
+        });
+    });
+
+    describe("PUT /api/groups", function() {
+        var requestUrl = baseUrl + "/api/groups/bobsDodgyGroup";
+
+        it("responds with status code 401 if user not authenticated", function (done) {
+            request.put(requestUrl, function (error, response) {
+                assert.equal(response.statusCode, 401);
+                done();
+            });
+        });
+
+        it("responds with 401 if the token is expired", function (done) {
+            cookieJar.setCookie(request.cookie("sessionToken=" + testExpiredToken), baseUrl);
+            request.put({url: requestUrl, jar: cookieJar}, function (error, response) {
+                assert.equal(response.statusCode, 401);
+                done();
+            });
+        });
+
+        it("responds with 200 if user is authenticated and object exists", function(done) {
+            authenticateUser(testGithubUser, testToken, function() {
+                dbCollections.groups.save.callsArgWith(1, null, {
+                    result: {
+                        nModified: 0
+                    }
+                });
+
+                request.put({url: requestUrl, jar: cookieJar, json: {
+                    title: "Dodgetacular",
+                    users: ["Nobody", "Shady", "At", "All"]
+                }}, function (error, response) {
+                    assert.equal(response.statusCode, 201);
+                    done();
+                });
+            });
+        });
+
+        it("responds with 200 if user is authenticated and object doesn't exist", function(done) {
+            authenticateUser(testGithubUser, testToken, function() {
+                dbCollections.groups.save.callsArgWith(1, null, {
+                    result: {
+                        nModified: 1
+                    }
+                });
+
+                request.put({url: requestUrl, jar: cookieJar, json: {
+                    title: "Dodgetacular",
+                    users: ["Nobody", "Shady", "At", "All"]
+                }}, function (error, response) {
+                    assert.equal(response.statusCode, 200);
+                    done();
+                });
+            });
+        });
+
+        it("responds with 400 if there is a bad request", function(done) {
+            authenticateUser(testGithubUser, testToken, function() {
+                dbCollections.groups.save.callsArgWith(0, {"Should've coded": "Better"}, null);
+
+                request.put({url: requestUrl, jar: cookieJar}, function (error, response) {
+                    assert.equal(response.statusCode, 400);
+                    done();
+                });
+            });
+        });
+    });
+
     describe("WebSocket Connections", function() {
         var socket1;
         var socket2;
