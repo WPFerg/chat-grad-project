@@ -504,6 +504,7 @@
             });
             $scope.socket.on("message", function (message) {
                 $scope.$addMessageToChat(message);
+                $scope.$$apply();
             });
         };
 
